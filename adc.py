@@ -2,7 +2,7 @@ from machine import Pin, ADC, PWM
 import time
 
 adc = ADC(Pin(28))
-pwm = PWM(Pin(5))
+pwm = PWM(Pin(3))
 
 pwm.freq(1000)
 

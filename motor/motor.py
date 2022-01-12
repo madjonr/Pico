@@ -2,8 +2,8 @@ from machine import Pin
 import utime
 
 
-motor1a = Pin(12, Pin.OUT)
-motor1b = Pin(13, Pin.OUT)
+motor1a = Pin(16, Pin.OUT)
+motor1b = Pin(17, Pin.OUT)
 
 
 def forward():

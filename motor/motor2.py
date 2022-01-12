@@ -1,9 +1,9 @@
 from machine import Pin, PWM, ADC
 import utime
 
-pwm1 = PWM(Pin(13))
-motor1b = Pin(12, Pin.OUT)
-adc = ADC(Pin(26))
+pwm1 = PWM(Pin(17))
+motor1b = Pin(16, Pin.OUT)
+adc = ADC(Pin(28))
 
 
 pwm1.freq(10000)

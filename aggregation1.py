@@ -4,8 +4,8 @@ from sh1106 import SH1106_I2C
 import time
 
 adc = ADC(Pin(28))
-pwm1 = PWM(Pin(5))
-pwm2 = PWM(Pin(4))
+pwm1 = PWM(Pin(3))
+pwm2 = PWM(Pin(2))
 pwm1.freq(1000)
 pwm2.freq(1000)
 
@@ -17,7 +17,7 @@ oled.rotate(True)
 
 while True:
     pwm1.duty_u16(adc.read_u16())
-    pwm2.duty_u16(65535-adc.read_u16())
+    pwm2.duty_u16(60000-adc.read_u16())
     
     oled.fill(0)
     oled.text("hello teanur", 10, 10)
