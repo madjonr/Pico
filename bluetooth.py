@@ -1,10 +1,10 @@
 from machine import UART, Pin
 
 #blue = UART(1,9600)
-blue = UART(1, tx=Pin(4), rx=Pin(5), baudrate=9600)
+blue = UART(1, tx=Pin(8), rx=Pin(9), baudrate=9600)
 led = Pin(25, Pin.OUT)
-red = Pin(15, Pin.OUT)
-green = Pin(14, Pin.OUT)
+red = Pin(5, Pin.OUT)
+green = Pin(4, Pin.OUT)
 
 while True:
     if blue.any() > 0:

@@ -30,7 +30,7 @@ def prog():
     irq(rel(0))
 
 
-sm = StateMachine(0, prog, freq=10000, set_base=Pin(2), out_base=Pin(2))
+sm = StateMachine(0, prog, freq=10000, set_base=Pin(18), out_base=Pin(18))
 data = [(1,2,4,8),(2,4,8,1),(4,8,1,2),(8,1,2,4)]
 steps = 0
 

@@ -1,7 +1,7 @@
 from machine import Pin
 import utime
 
-pins = [Pin(2, Pin.OUT), Pin(3, Pin.OUT), Pin(4, Pin.OUT), Pin(5, Pin.OUT)]
+pins = [Pin(18, Pin.OUT), Pin(19, Pin.OUT), Pin(20, Pin.OUT), Pin(21, Pin.OUT)]
 
 full_step_sequence = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
 

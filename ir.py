@@ -9,7 +9,7 @@ from print_error import print_error
 
 
 
-i2c = I2C(0)
+i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
 oled = SH1106_I2C(128, 64, i2c)
 oled.rotate(True)
 

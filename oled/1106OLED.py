@@ -1,8 +1,10 @@
-from machine import I2C
+from machine import I2C, Pin
 from sh1106 import SH1106_I2C
 import time
 
-i2c = I2C(0)
+#i2c = I2C(0) 根据raspberry pi Pico的设定，id只有0和1这2个值，I2C(0)是默认指5和4脚
+# 通过i2c.scan() 扫描得出0x30的值配置到sh1106.py文件初始化SH1106_I2C的addr=0x3c中
+i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
 oled = SH1106_I2C(128, 64, i2c)
 
 oled.rotate(True)
