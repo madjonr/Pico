@@ -17,7 +17,7 @@ oled.rotate(True)
 
 while True:
     pwm1.duty_u16(adc.read_u16())
-    pwm2.duty_u16(60000-adc.read_u16())
+    pwm2.duty_u16(65535-adc.read_u16())
     
     oled.fill(0)
     oled.text("hello teanur", 10, 10)
