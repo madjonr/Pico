@@ -9,8 +9,9 @@ def blink():
     wrap()
 sm = rp2.StateMachine(0, blink, out_base=Pin(25))
 sm.active(1)
+
 while True:
     sm.put(1)
     time.sleep(1)
-    sm.put(2)
-    time.sleep(0)
+    sm.put(0)
+    time.sleep(1)
