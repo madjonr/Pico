@@ -21,20 +21,19 @@ direction.value(1)
 
 @rp2.asm_pio(set_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_RIGHT, autopull=True)
 def blink():
-    #out(x, 32)
-    wrap_target()
-    mov(x, osr)
+    label('setXfromOSR')
+    out(x, 32)
     mov(y, x)
+    wrap_target()
+    jmp(not_osre, 'setXfromOSR')
     set(pins, 1)
-    label('high_loop')
-    nop()                     
-    jmp(x_dec, 'high_loop')   
-
-    set(pins, 0)               
-    label('low_loop')
-    nop()                     
-    jmp(y_dec, 'low_loop')                  
-    wrap()
+    set(pins, 0)
+    label('delay')
+    nop()
+    jmp(not_x, 'setXfromY')
+    jmp(x_dec, 'delay')
+    label('setXfromY')
+    mov(x, y)
     
     
 sm = rp2.StateMachine(0, blink, freq=200000, set_base=Pin(17))
@@ -42,13 +41,22 @@ sm.active(1)
 
 
 
-sm.put(10)
-time.sleep(3)
+sm.put(1)
+time.sleep(1)
 sm.put(2)
-time.sleep(3)
+time.sleep(1)
 sm.put(3)
-time.sleep(3)
+time.sleep(1)
 sm.put(4)
+time.sleep(1)
+sm.put(5)
+time.sleep(1)
+sm.put(6)
+time.sleep(1)
+sm.put(7)
+time.sleep(1)
+sm.put(8)
+
 
 
 
