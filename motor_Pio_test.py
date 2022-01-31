@@ -17,17 +17,23 @@ blue = UART(1, tx=Pin(4), rx=Pin(5), baudrate=9600)
 msg = 'null'
 
 speed = 10
-direction.value(0)
+direction.value(1)
 
 @rp2.asm_pio(set_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_RIGHT, autopull=True)
 def blink():
+    #out(x, 32)
     wrap_target()
     mov(x, osr)
-    set(pins, 1)              [1] 
-    set(pins, 0)              [1] 
-    label('loop')
-    nop()                     [1]                  
-    jmp(x_dec, 'loop')               
+    mov(y, x)
+    set(pins, 1)
+    label('high_loop')
+    nop()                     
+    jmp(x_dec, 'high_loop')   
+
+    set(pins, 0)               
+    label('low_loop')
+    nop()                     
+    jmp(y_dec, 'low_loop')                  
     wrap()
     
     
@@ -36,10 +42,20 @@ sm.active(1)
 
 
 
-for i in range(100):
-    sm.restart()
-    sm.put(i)
-    time.sleep(0.1)
+sm.put(10)
+time.sleep(3)
+sm.put(2)
+time.sleep(3)
+sm.put(3)
+time.sleep(3)
+sm.put(4)
+
+
+
+#for i in range(100):
+   #sm.restart()
+#   sm.put(i)
+#   time.sleep(1)
 
 
 
