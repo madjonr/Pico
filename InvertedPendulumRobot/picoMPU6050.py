@@ -1,7 +1,7 @@
 
 
 from imu import MPU6050
-import utime
+import time
 from machine import Pin, I2C
 
 i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
@@ -23,5 +23,5 @@ while True:
     print('ax:{:04}\t ay:{:04}\t az:{:04}\t gx:{:04}\t gy:{:04}\t gz:{:04}\r'.format(ax, ay, az, gx, gy, gz))
     
     # Following sleep statement makes values enought stable to be seen and
-    # read by a human from shellm
-    utime.sleep_ms(200)
+    # read by a human from shell
+    time.sleep(0.2)

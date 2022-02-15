@@ -1,6 +1,6 @@
 import machine
-sdaPIN=machine.Pin(14)
-sclPIN=machine.Pin(15)
+sdaPIN=machine.Pin(26)
+sclPIN=machine.Pin(27)
 i2c=machine.I2C(1,sda=sdaPIN, scl=sclPIN, freq=400000)
 
 print('Scanning i2c bus')

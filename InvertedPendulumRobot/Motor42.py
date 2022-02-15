@@ -5,11 +5,7 @@ import utime
 
 
 
-SPEED_DELAY = 10
-SPEED_TIME = 1000
-INIT_SPEED = 100
-A4988_STEPS = 16
-
+SPEED_DELAY = 200
 
 @rp2.asm_pio(set_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_RIGHT, autopull=True)
 def blink():
@@ -21,7 +17,7 @@ def blink():
     set(pins, 1)        
     set(pins, 0)        
     label('delay')
-    nop()               [10]
+    nop()               [16]
     jmp(x_dec, 'delay')
     mov(x, y)
     wrap()
@@ -36,10 +32,10 @@ class Motor42:
         self.step = step
         self.direction = direction
         a4988 = A4988(ms1, ms2, ms3)
-        a4988.set_steps(A4988_STEPS)
-        self.sm = rp2.StateMachine(sm_index, blink, freq=100000, set_base=step)
+        a4988.set_steps(16)
+        self.sm = rp2.StateMachine(sm_index, blink, freq=200000, set_base=step)
         self.sm.active(1)
-        self.current_speed = INIT_SPEED
+        self.current_speed = 0
 
 
 
@@ -62,21 +58,13 @@ class Motor42:
         # print(self.direction.value())
         
     def speed_control(self, speed):
-        step = abs(self.current_speed - speed)
-        for i in range(step):
-            self.current_speed = self.current_speed -1 if self.current_speed > speed else self.current_speed +1
-            self.sm.put(self.current_speed)
-            #if step <= 10:
-                #delay = SPEED_DELAY
-            #else:
-                #delay = int(SPEED_TIME/step)
+        for i in range(abs(self.current_speed - speed)):
+            run(speed)
             utime.sleep_ms(SPEED_DELAY)
-            #print(self.current_speed)
-
+        self.current_speed = speed
 
 
     
     
     
     
-
