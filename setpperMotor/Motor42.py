@@ -37,7 +37,7 @@ class Motor42:
         self.direction = direction
         a4988 = A4988(ms1, ms2, ms3)
         a4988.set_steps(A4988_STEPS)
-        self.sm = rp2.StateMachine(sm_index, blink, freq=100000, set_base=step)
+        self.sm = rp2.StateMachine(sm_index, blink, freq=300000, set_base=step)
         self.sm.active(1)
         self.current_speed = INIT_SPEED
 

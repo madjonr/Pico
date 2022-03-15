@@ -5,30 +5,6 @@
 # Authors Peter Hinch, Sebastian Plamauer
 # V0.2 17th May 2017 Platform independent: utime and machine replace pyb
 
-'''
-mpu9250 is a micropython module for the InvenSense MPU9250 sensor.
-It measures acceleration, turn rate and the magnetic field in three axis.
-mpu9150 driver modified for the MPU9250 by Peter Hinch
-
-The MIT License (MIT)
-Copyright (c) 2014 Sebastian Plamauer, oeplse@gmail.com, Peter Hinch
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-'''
-
 # User access is now by properties e.g.
 # myimu = MPU9250('X')
 # magx = myimu.mag.x
@@ -51,13 +27,13 @@ class MPUException(OSError):
 
 def bytes_toint(msb, lsb):
     '''
-    Convert two bytes to signed integer (big endian)
+    Convert two bytes to signed integer (big endian) 将两个字节转换成有符号的整数
     for little endian reverse msb, lsb arguments
     Can be used in an interrupt handler
     '''
     if not msb & 0x80:
-        return msb << 8 | lsb  # +ve
-    return - (((msb ^ 255) << 8) | (lsb ^ 255) + 1)
+        return msb << 8 | lsb  # +ve 正值时1-127，左移八位后将后面的一个字节加上去
+    return - (((msb ^ 255) << 8) | (lsb ^ 255) + 1)  # 负值
 
 
 class MPU6050(object):
@@ -79,42 +55,44 @@ class MPU6050(object):
         self.buf3 = bytearray(3)
         self.buf6 = bytearray(6)
 
+        # 创建I2C对象
         sleep_ms(200)                           # Ensure PSU and device have settled
-        if isinstance(side_str, str):           # Non-pyb targets may use other than X or Y
+        if isinstance(side_str, str):           # Non-pyb targets may use other than X or Y 判断side_str 是否字符型
             self._mpu_i2c = I2C(side_str)
-        elif hasattr(side_str, 'readfrom'):     # Soft or hard I2C instance. See issue #3097
+        elif hasattr(side_str, 'readfrom'):     # Soft or hard I2C instance. See issue #3097 判断是否有readfrom 属性，I2C的属性
             self._mpu_i2c = side_str
         else:
-            raise ValueError("Invalid I2C instance")
+            raise ValueError("Invalid I2C instance")  # 无效的实例
 
+        # 找到mpu的地址
         if device_addr is None:
-            devices = set(self._mpu_i2c.scan())
-            mpus = devices.intersection(set(self._mpu_addr))
-            number_of_mpus = len(mpus)
+            devices = set(self._mpu_i2c.scan())   #扫描0x08和0x77之间的所有I2C地址，并返回一个有反应的列表。如果一个设备在其地址（包括一个写位）被发送到总线上后，将SDA线拉低，那么该设备就会做出响应。
+            mpus = devices.intersection(set(self._mpu_addr))   # 把原来_mpu_addr中的地址也加进集合中
+            number_of_mpus = len(mpus)            # 地址总数，包括扫描出来的和_mpu_addr中定义的
             if number_of_mpus == 0:
                 raise MPUException("No MPU's detected")
             elif number_of_mpus == 1:
-                self.mpu_addr = mpus.pop()
+                self.mpu_addr = mpus.pop()        # 如果只有一个设备，从mpus中移除放入到mpu_addr中。移除某个元素(在有序数据集pop方法移除末尾元素，无序数据集则不确定)
             else:
-                raise ValueError("Two MPU's detected: must specify a device address")
+                raise ValueError("Two MPU's detected: must specify a device address")   # 多个I2C设备需要指定地址
         else:
-            if device_addr not in (0, 1):
+            if device_addr not in (0, 1):  # I2C的ID，rs2040针脚定义只有0和1这两种
                 raise ValueError('Device address must be 0 or 1')
             self.mpu_addr = self._mpu_addr[device_addr]
 
-        self.chip_id                     # Test communication by reading chip_id: throws exception on error
+        self.chip_id                     # Test communication by reading chip_id: throws exception on error 通过读取chip_id测试通信：出错时抛出异常
         # Can communicate with chip. Set it up.
         self.wake()                             # wake it up
-        self.passthrough = True                 # Enable mag access from main I2C bus
+        self.passthrough = True                 # Enable mag access from main I2C bus  启用主I2C总线的Mag访问
         self.accel_range = 0                    # default to highest sensitivity
         self.gyro_range = 0                     # Likewise for gyro
 
     # read from device
-    def _read(self, buf, memaddr, addr):        # addr = I2C device address, memaddr = memory location within the I2C device
+    def _read(self, buf, memaddr, addr):        # addr = I2C device address, memaddr = memory location within the I2C device I2C设备内的内存位置
         '''
         Read bytes to pre-allocated buffer Caller traps OSError.
         '''
-        self._mpu_i2c.readfrom_mem_into(addr, memaddr, buf)
+        self._mpu_i2c.readfrom_mem_into(addr, memaddr, buf) #从memaddr指定的内存地址开始，从addr指定的外围设备向buf中读取。读取的字节数就是buf的长度。参数addrsize指定了地址的大小（在ESP8266上这个参数不被识别，地址大小总是8位）。
 
     # write to device
     def _write(self, data, memaddr, addr):
@@ -122,7 +100,7 @@ class MPU6050(object):
         Perform a memory write. Caller should trap OSError.
         '''
         self.buf1[0] = data
-        self._mpu_i2c.writeto_mem(addr, memaddr, self.buf1)
+        self._mpu_i2c.writeto_mem(addr, memaddr, self.buf1)  #从memaddr指定的内存地址开始，将buf写到addr指定的外设上。参数addrsize指定了地址大小，单位是比特（在ESP8266上，这个参数不被识别，地址大小总是8比特）。
 
     # wake
     def wake(self):
@@ -157,14 +135,14 @@ class MPU6050(object):
         except OSError:
             raise MPUException(self._I2Cerror)
         chip_id = int(self.buf1[0])
-        if chip_id != self._chip_id:
+        if chip_id != self._chip_id:   #判断读取到的芯片的ID是否是104
             raise ValueError('Bad chip ID retrieved: MPU communication failure')
         return chip_id
 
     @property
     def sensors(self):
         '''
-        returns sensor objects accel, gyro
+        returns sensor objects accel, gyro 返回传感器对象加速度和角速度
         '''
         return self._accel, self._gyro
 
@@ -172,7 +150,7 @@ class MPU6050(object):
     @property
     def temperature(self):
         '''
-        Returns the temperature in degree C.
+        Returns the temperature in degree C. 返回温度，单位是摄氏度
         '''
         try:
             self._read(self.buf2, 0x41, self.mpu_addr)
@@ -184,7 +162,7 @@ class MPU6050(object):
     @property
     def passthrough(self):
         '''
-        Returns passthrough mode True or False
+        Returns passthrough mode True or False  返回直通模式 True或False
         '''
         try:
             self._read(self.buf1, 0x37, self.mpu_addr)
@@ -207,7 +185,7 @@ class MPU6050(object):
         else:
             raise ValueError('pass either True or False')
 
-    # sample rate. Not sure why you'd ever want to reduce this from the default.
+    # sample rate. Not sure why you'd ever want to reduce this from the default. 采样率
     @property
     def sample_rate(self):
         '''
@@ -224,7 +202,7 @@ class MPU6050(object):
     @sample_rate.setter
     def sample_rate(self, rate):
         '''
-        Set sample rate as per Register Map document section 4.4
+        Set sample rate as per Register Map document section 4.4 设置采样率
         '''
         if rate < 0 or rate > 255:
             raise ValueError("Rate must be in range 0-255")
@@ -238,7 +216,7 @@ class MPU6050(object):
     @property
     def filter_range(self):
         '''
-        Returns the gyro and temperature sensor low pass filter cutoff frequency
+        Returns the gyro and temperature sensor low pass filter cutoff frequency  返回陀螺仪和温度传感器低通滤波器的截止频率
         Pass:               0   1   2   3   4   5   6
         Cutoff (Hz):        250 184 92  41  20  10  5
         Sample rate (KHz):  8   1   1   1   1   1   1
@@ -271,7 +249,7 @@ class MPU6050(object):
     @property
     def accel_range(self):
         '''
-        Accelerometer range
+        Accelerometer range 加速度范围， 0x1C位置读出来的值是0x00, 0x08, 0x10, 0x18这4种
         Value:              0   1   2   3
         for range +/-:      2   4   8   16  g
         '''
@@ -334,13 +312,13 @@ class MPU6050(object):
     @property
     def accel(self):
         '''
-        Acceleremoter object
+        Acceleremoter object 返回加速度对象
         '''
         return self._accel
 
     def _accel_callback(self):
         '''
-        Update accelerometer Vector3d object
+        Update accelerometer Vector3d object 更新加速度计矢量三维对象
         '''
         try:
             self._read(self.buf6, 0x3B, self.mpu_addr)
@@ -358,6 +336,7 @@ class MPU6050(object):
         '''
         For use in interrupt handlers. Sets self._accel._ivector[] to signed
         unscaled integer accelerometer values
+        在中断处理程序中使用。设置self._accel._ivector[]为有符号的 未缩放的整数加速度计值,原始读数 -32767~32767
         '''
         self._read(self.buf6, 0x3B, self.mpu_addr)
         self._accel._ivector[0] = bytes_toint(self.buf6[0], self.buf6[1])

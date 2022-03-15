@@ -19,7 +19,7 @@ motor_L = Motor42(0, motor_L_step, motor_L_direction, motor_L_s1, motor_L_s2, mo
 motor_R = Motor42(1, motor_R_step, motor_R_direction, motor_R_s1, motor_R_s2, motor_R_s3)
 
 motor_L.forward()
-motor_L.run(3)
+motor_L.run(30)
 
 motor_R.forward()
 motor_R.run(3)

@@ -1,7 +1,7 @@
 '''
 将python版本改写成MicroPython版本
 '''
-import utime
+import time
 #import warnings
 from sys import platform
 
@@ -19,18 +19,17 @@ def _clamp(value, limits):
 
 try:
     # support MicroPython 
-    #_current_time = time.ticks_ms
-    _current_time = utime.ticks_ms
+    _current_time = time.ticks_ms
 except AttributeError:
     # time.monotonic() not available (using python < 3.3), fallback to time.time()
-    _current_time = utime.time
+    _current_time = time.time
     print('time.ticks_ms() not available in micropython, using time.time() as fallback')
 
 
 class PID(object):
     """A simple PID controller."""
 
-    def __init__(self, Kp=1.0, Ki=0.0, Kd=0.0, setpoint=0, sample_time=0.01, output_limits=(None, None), auto_mode=True, proportional_on_measurement=False, error_map=False):
+    def __init__(self, Kp=1.0, Ki=0.0, Kd=0.0, setpoint=0, sample_time=0.01, output_limits=(None, None), auto_mode=True, proportional_on_measurement=False, error_map=None):
         """
         Initialize a new PID controller.
         param:
@@ -53,7 +52,7 @@ class PID(object):
         self._min_output, self._max_output = None, None
         self._auto_mode = auto_mode
         self.proportional_on_measurement = proportional_on_measurement
-        self.error_map = False
+        self.error_map = error_map
 
         self._proportional = 0                  # 比例系数
         self._integral = 0                      # 积分
@@ -66,11 +65,11 @@ class PID(object):
         self.output_limits = output_limits      
         self.reset()
 
-    def __call__(self, input_, dt=None):
+    def __call__(self, angle_, gyro, dt=None):
         """
         Update the PID controller. 更新PID控制器
 
-        Call the PID controller with *input_* and calculate and return a control output if
+        Call the PID controller with *angle_* and calculate and return a control output if
         sample_time seconds has passed since the last update. If no new output is calculated,
         return the previous output instead (or None if no value has been calculated yet).
         
@@ -82,37 +81,39 @@ class PID(object):
             return self._last_output
 
         now = _current_time()
-        if dt is None:                           # 微分时的时间步长
+        if dt is None:                           # 微分时的时间步长，如果时间步长存在就取值，不存在就取一个极小值
             dt = now - self._last_time if (now - self._last_time) else 1e-16
         elif dt <= 0:
             raise ValueError('dt has negative value {}, must be positive'.format(dt))
 
         if self.sample_time is not None and dt < self.sample_time and self._last_output is not None:
-            # Only update every sample_time seconds
+            # Only update every sample_time seconds  时间步长太小了(小于取样时间)，就直接返回原来最后一次的输出值，这样避免计算过于频繁
+            # 同时也是控制稳定的计算周期
             return self._last_output
 
         # Compute error terms
-        # 计算误差
-        error = self.setpoint - input_
-        d_input = input_ - (self._last_input if (self._last_input is not None) else input_)  # 输入的增量
+        # 计算误差，目标值减去输入值
+        error = self.setpoint - angle_
+        d_input = angle_ - (self._last_input if (self._last_input is not None) else angle_)  # 输入的增量值
 
         # Check if must map the error
-        if self.error_map:
+        if self.error_map is not None:
             error = self.error_map(error)
 
-        # Compute the proportional term
+        # Compute the proportional term  计算比例系数
         if not self.proportional_on_measurement:
-            # Regular proportional-on-error, simply set the proportional term
+            # Regular proportional-on-error, simply set the proportional term  常规的错误比例
             self._proportional = self.Kp * error
         else:
-            # Add the proportional error on measurement to error_sum
+            # Add the proportional error on measurement to error_sum   将测量的比例误差加入到误差总和中
             self._proportional -= self.Kp * d_input
 
-        # Compute integral and derivative terms
+        # Compute integral and derivative terms   计算积分和导数项
         self._integral += self.Ki * error * dt
-        self._integral = _clamp(self._integral, self.output_limits)  # Avoid integral windup
+        self._integral = _clamp(self._integral, self.output_limits)  # Avoid integral windup  避免整体卷曲
 
-        self._derivative = -self.Kd * d_input / dt
+        #self._derivative = -self.Kd * d_input / dt
+        self._derivative = -self.Kd * gyro
 
         # Compute final output
         output = self._proportional + self._integral + self._derivative
@@ -120,7 +121,7 @@ class PID(object):
 
         # Keep track of state
         self._last_output = output
-        self._last_input = input_
+        self._last_input = angle_
         self._last_time = now
 
         return output
@@ -230,16 +231,4 @@ class PID(object):
         self._last_time = _current_time()
         self._last_output = None
         self._last_input = None
-        
-    
-    def error_map(self, error_):
-        """
-        一价滤波器，减少抖动
-        """
-        error *= 0.8
-        error += error_*0.2
-        return error
-        
-        
-        
-        
+

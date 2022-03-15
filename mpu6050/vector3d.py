@@ -4,26 +4,6 @@
 # V0.7 17th May 2017 pyb replaced with utime
 # V0.6 18th June 2015
 
-'''
-The MIT License (MIT)
-Copyright (c) 2014 Sebastian Plamauer, oeplse@gmail.com, Peter Hinch
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-'''
-
 from utime import sleep_ms
 from math import sqrt, degrees, acos, atan2
 
@@ -40,6 +20,8 @@ class Vector3d(object):
     Represents a vector in a 3D space using Cartesian coordinates.
     Internally uses sensor relative coordinates.
     Returns vehicle-relative x, y and z values.
+    内部使用传感器的相对坐标。
+    返回相对于车辆的x、y和z值。
     '''
     def __init__(self, transposition, scaling, update_function):
         self._vector = [0, 0, 0]
@@ -48,7 +30,7 @@ class Vector3d(object):
         self.argcheck(transposition, "Transposition")
         self.argcheck(scaling, "Scaling")
         if set(transposition) != {0, 1, 2}:
-            raise ValueError('Transpose indices must be unique and in range 0-2')
+            raise ValueError('Transpose indices must be unique and in range 0-2')  # 转置指数必须是唯一的，且范围为0-2
         self._scale = scaling
         self._transpose = transposition
         self.update = update_function
@@ -63,6 +45,7 @@ class Vector3d(object):
     def calibrate(self, stopfunc, waitfunc=default_wait):
         '''
         calibration routine, sets cal
+        校准程序，设置Cal
         '''
         self.update()
         maxvec = self._vector[:]                # Initialise max and min lists with current values
@@ -70,14 +53,15 @@ class Vector3d(object):
         while not stopfunc():
             waitfunc()
             self.update()
-            maxvec = list(map(max, maxvec, self._vector))
+            maxvec = list(map(max, maxvec, self._vector))    # 找出两个列表中最大值组成新列表
             minvec = list(map(min, minvec, self._vector))
-        self.cal = tuple(map(lambda a, b: (a + b)/2, maxvec, minvec))
+        self.cal = tuple(map(lambda a, b: (a + b)/2, maxvec, minvec))   # 求2个列表的平均值
 
     @property
     def _calvector(self):
         '''
         Vector adjusted for calibration offsets
+        为校准偏移而调整的矢量
         '''
         return list(map(lambda val, offset: val - offset, self._vector, self.cal))
 
@@ -110,15 +94,24 @@ class Vector3d(object):
 
     @property
     def inclination(self):
+        """
+        倾斜角
+        """
         x, y, z = self.xyz
         return degrees(acos(z / sqrt(x**2 + y**2 + z**2)))
 
     @property
     def elevation(self):
+        """
+        仰角
+        """
         return 90 - self.inclination
 
     @property
     def azimuth(self):
+        """
+        方位角
+        """
         x, y, z = self.xyz
         return degrees(atan2(y, x))
 

@@ -7,13 +7,11 @@ import utime
 
 
 A4988_STEPS = 16
-SPEED_INIT = 60
-SPEED_DELAY = 40
-SPEED_TIME = 1000
+SPEED_INIT =20
 current_speed_L = 100
 current_speed_R = 100
 SPEED_MIN = 1
-SPEED_MAX = 100
+SPEED_MAX =20
 
 
 motor_L_direction = Pin(0, Pin.OUT)
@@ -38,12 +36,17 @@ def blink():
     mov(y, x)
     wrap_target()
     jmp(not_osre, 'setXfromOSR')
-    set(pins, 1)        
-    set(pins, 0)        
-    label('delay')
-    nop()               [15]
-    nop()               [15]
-    jmp(x_dec, 'delay')
+    set(pins, 1)
+    label('delay1')
+    nop()               [20]
+    nop()               [20]
+    jmp(x_dec, 'delay1')
+    mov(x, y)
+    set(pins, 0)       
+    label('delay0')
+    nop()               [20]
+    nop()               [20]
+    jmp(x_dec, 'delay0')
     mov(x, y)
     wrap()
 
@@ -58,27 +61,25 @@ class Motor:
         a4988_L.set_steps(A4988_STEPS)
         a4988_R = A4988(motor_R_s1, motor_R_s2, motor_R_s3)
         a4988_R.set_steps(A4988_STEPS)
-        self.sm_L = rp2.StateMachine(0, blink, freq=1000000, set_base=motor_L_step)
-        self.sm_L.active(1)
-        self.sm_R = rp2.StateMachine(1, blink, freq=1000000, set_base=motor_R_step)
-        self.sm_R.active(1)
+        self.sm_L = rp2.StateMachine(0, blink, freq=500000, set_base=motor_L_step)
+        #self.sm_L.active(1)
+        self.sm_R = rp2.StateMachine(1, blink, freq=500000, set_base=motor_R_step)
+        #self.sm_R.active(1)
         
         self.current_speed = SPEED_INIT
 
 
 
 
-    def start(self, speed=SPEED_INIT):
-        self.sm_L.put(speed)
-        self.sm_R.put(speed)
+    def start(self):
+        self.sm_L.active(1)
+        self.sm_R.active(1)
         
     
-    def close(self):
-        self.sm_L.active(0)
-        self.sm_R.active(0)
         
     def stop(self):
-        speed_control(0)
+        self.sm_L.active(0)
+        self.sm_R.active(0)
         
 
     def forward(self):
@@ -93,9 +94,9 @@ class Motor:
         
 
     def speed_limits(self, speed):
-        if speed <= SPEED_MIN:
+        if speed < SPEED_MIN:
             return SPEED_MIN
-        elif speed >= SPEED_MAX:
+        elif speed > SPEED_MAX:
             return SPEED_MAX
         else:
             return speed
@@ -104,9 +105,12 @@ class Motor:
         speed = self.speed_limits(speed)
         self.sm_L.put(speed)
         self.sm_R.put(speed)
-        # self.current_speed = speed
         
-        
+    def set_speed(self, speed):
+        self.sm_L.put(speed)
+        self.sm_R.put(speed)
+    
+    
     def trun_R(self):
         self.sm_R.put(0)
         
